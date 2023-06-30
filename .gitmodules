@@ -4,3 +4,6 @@
 [submodule "lib/2023-06-lybra"]
 	path = lib/2023-06-lybra
 	url = https://github.com/code-423n4/2023-06-lybra
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts
