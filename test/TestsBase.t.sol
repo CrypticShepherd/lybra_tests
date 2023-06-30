@@ -88,6 +88,9 @@ contract TestsBase is Test {
         realRETHVault = new LybraRETHVault(address(realPeUSDMainnet), address(realConfigurator), address(fakeRETH), address(fakeChainLink), address(fakeRocketpoolDeposit));
         realConfigurator.setMintVault(address(realRETHVault), true);
         realConfigurator.setMintVaultMaxSupply(address(realRETHVault), 10_000_000_000 * 1e18);
+        realConfigurator.setBorrowApy(address(realRETHVault), 200);
+        realConfigurator.setSafeCollateralRatio(address(realRETHVault), 160 * 1e18);
+        realConfigurator.setBadCollateralRatio(address(realRETHVault), 130 * 1e18);
 
         // set up incentives
         fakeLBRPriceOracle = new mockLBRPriceOracle();
