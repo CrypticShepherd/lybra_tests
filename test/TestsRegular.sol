@@ -67,4 +67,66 @@ contract TestsPOC is TestsBase {
 
         vm.stopPrank();
     }
+
+    function testEsLBR() public {
+        vm.startPrank(owner);
+        assertEq(realEsLBR.totalSupply(), 0);
+        assertTrue(keccak256(abi.encodePacked(realEsLBR.name())) == keccak256(abi.encodePacked("esLBR")));
+        assertTrue(keccak256(abi.encodePacked(realEsLBR.symbol())) == keccak256(abi.encodePacked("esLBR")));
+        vm.stopPrank();
+    }
+
+    function testLBR() public {
+        vm.startPrank(owner);
+        assertEq(realLBR.totalSupply(), 0);
+        assertTrue(keccak256(abi.encodePacked(realLBR.name())) == keccak256(abi.encodePacked("LBR")));
+        assertTrue(keccak256(abi.encodePacked(realLBR.symbol())) == keccak256(abi.encodePacked("LBR")));
+        vm.stopPrank();
+    }
+
+    function testGovernance() public {
+        vm.startPrank(owner);
+        assertTrue(keccak256(abi.encodePacked(realGovernance.name())) == keccak256(abi.encodePacked("LYBRA")));
+        assertTrue(keccak256(abi.encodePacked(realGovernance.CLOCK_MODE())) == keccak256(abi.encodePacked("mode=blocknumber&from=default")));
+        vm.stopPrank();
+    }
+
+    function testProposal() public {
+        vm.startPrank(owner);
+
+        // get some voting power
+        realEsLBR.mint(owner, 2*1e23);
+        realEsLBR.delegate(owner);
+        vm.roll(2);
+
+        // make a proposal
+        address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+        string memory description = "Test Proposal";
+        uint256 proposalID = realGovernance.propose(
+            targets,
+            values,
+            calldatas,
+            description
+        );
+
+        // vote
+        vm.roll(2 + realGovernance.votingDelay() + 1);
+        realGovernance.castVote(proposalID, 1);
+
+        // queue
+        vm.roll(2 + realGovernance.votingPeriod() + realGovernance.votingDelay() + 1);
+        realGovernanceTimelock.grantRole(realGovernanceTimelock.TIMELOCK(), owner);
+        realGovernanceTimelock.grantRole(realGovernanceTimelock.PROPOSER_ROLE(), address(realGovernance));
+        realGovernance.queue(targets, values, calldatas, keccak256(abi.encodePacked(description)));
+
+        // execute
+        vm.warp(3);
+        realGovernanceTimelock.grantRole(realGovernanceTimelock.EXECUTOR_ROLE(), address(realGovernance));
+        realGovernance.execute(targets, values, calldatas, keccak256(abi.encodePacked(description)));
+
+        vm.stopPrank();
+    }
+
 }

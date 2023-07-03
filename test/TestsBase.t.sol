@@ -14,6 +14,12 @@ import {LybraRETHVault} from "../lib/2023-06-lybra/contracts/lybra/pools/LybraRE
 import {mockLBRPriceOracle} from "../lib/2023-06-lybra/contracts/mocks/mockLBRPriceOracle.sol";
 import {esLBRBoost} from "../lib/2023-06-lybra/contracts/lybra/miner/esLBRBoost.sol";
 import {EUSDMiningIncentives} from "../lib/2023-06-lybra/contracts/lybra/miner/EUSDMiningIncentives.sol";
+import {ProtocolRewardsPool} from "../lib/2023-06-lybra/contracts/lybra/miner/ProtocolRewardsPool.sol";
+
+import {esLBR} from "../lib/2023-06-lybra/contracts/lybra/token/esLBR.sol";
+import {LBR} from "../lib/2023-06-lybra/contracts/lybra/token/LBR.sol";
+import {GovernanceTimelock} from "../lib/2023-06-lybra/contracts/lybra/governance/GovernanceTimelock.sol";
+import {LybraGovernance} from "../lib/2023-06-lybra/contracts/lybra/governance/LybraGovernance.sol";
 
 import {mockCurve} from "../lib/2023-06-lybra/contracts/mocks/mockCurve.sol";
 import {stETHMock} from "../lib/2023-06-lybra/contracts/mocks/stETHMock.sol";
@@ -24,8 +30,11 @@ import {mockRPLDeposit} from "./mockRPLDeposit.sol";
 contract TestsBase is Test {
     address goerliLzEndPoint = 0xbfD2135BFfbb0B5378b56643c2Df8a87552Bfa23;
 
-    GovernanceTimelock realGovernanceTimelock;
+    esLBR realEsLBR;
+    LBR realLBR;
     address[] governanceTimelockAddresses;
+    GovernanceTimelock realGovernanceTimelock;
+    LybraGovernance realGovernance;
     Configurator realConfigurator;
 
     EUSD realEUSD;
@@ -36,7 +45,10 @@ contract TestsBase is Test {
 
     esLBRBoost realBoost;
     EUSDMiningIncentives realEUSDMiningIncentives;
+    ProtocolRewardsPool realProtcolRewardsPool;
     address[] pools;
+    address[] miners;
+    bool[] minerBools;
 
     mockCurve fakeCurve;
     stETHMock fakeStETH;
@@ -99,6 +111,18 @@ contract TestsBase is Test {
         pools.push(address(realStETHVault));
         pools.push(address(realRETHVault));
         realEUSDMiningIncentives.setPools(pools);
+        realProtcolRewardsPool = new ProtocolRewardsPool(address(realConfigurator));
+        realConfigurator.setProtocolRewardsPool(address(realProtcolRewardsPool));
+        miners.push(address(realProtcolRewardsPool));
+        minerBools.push(true);
+        miners.push(address(owner)); // add owner as minter so that we can easily get some LBR or esLBR
+        minerBools.push(true);
+        realConfigurator.setTokenMiner(miners, minerBools);
+
+        // set up rest of governance
+        realEsLBR = new esLBR(address(realConfigurator));
+        realLBR = new LBR(address(realConfigurator), 8, goerliLzEndPoint);
+        realGovernance = new LybraGovernance("LYBRA", realGovernanceTimelock, address(realEsLBR));
 
         vm.stopPrank();
     }
